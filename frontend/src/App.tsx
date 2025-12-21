@@ -1,103 +1,122 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function App() {
+  
   const [url, setUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [slug, setSlug] = useState("");
+  const [clickCount, setClickCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
+  useEffect(() => {
+    const savedShortUrl = localStorage.getItem("shortUrl");
+    const savedSlug = localStorage.getItem("slug");
+
+    if (savedShortUrl && savedSlug) {
+      setShortUrl(savedShortUrl);
+      setSlug(savedSlug);
+      fetchAnalytics(savedSlug);
+    }
+  }, []);
   async function handleShorten() {
     if (!url) return;
 
     setLoading(true);
     setShortUrl("");
     setSlug("");
+    setClickCount(null);
 
-    const res = await fetch("http://localhost:4000/api/shorten", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
+    try {
+      const res = await fetch("http://localhost:4000/api/shorten", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      });
 
-    const data = await res.json();
-    setShortUrl(data.shortUrl);
-    setSlug(data.slug);
-    setLoading(false);
+      const data = await res.json();
+
+      setShortUrl(data.shortUrl);
+      setSlug(data.slug);
+      localStorage.setItem("shortUrl", data.shortUrl);
+      localStorage.setItem("slug", data.slug);
+      // fetch analytics part
+      fetchAnalytics(data.slug);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function copy(text: string) {
-    navigator.clipboard.writeText(text);
+  
+  async function fetchAnalytics(slug: string) {
+    try {
+      setLoadingAnalytics(true);
+
+      const res = await fetch(
+        `http://localhost:4000/api/analytics/${slug}`
+      );
+
+      const data = await res.json();
+      setClickCount(data.totalClicks);
+    } catch (err) {
+      console.error(err);
+      setClickCount(null);
+    } finally {
+      setLoadingAnalytics(false);
+    }
   }
 
+  
   return (
     <div className="min-h-screen bg-[#f6ede3] flex flex-col items-center justify-center px-4 text-center">
-      {/* Title */}
-      <h1
-        className="text-5xl mb-6"
-        style={{ fontFamily: "Fredoka, sans-serif" }}
-      >
-        URL Shortner
-      </h1>
+      <h1 className="text-5xl mb-6">URL Shortener</h1>
 
-      {/* Description */}
-      <p className="max-w-2xl text-gray-800 mb-10 leading-relaxed"></p>
-
-      {/* Input + button */}
       <div className="flex gap-4 mb-8">
         <input
           type="text"
-          placeholder="Enter Link"
+          placeholder="Enter a long URL"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          className="px-4 py-2 rounded-lg border border-gray-400 w-64 focus:outline-none"
+          className="px-4 py-2 rounded-lg border border-gray-400 w-64"
         />
 
         <button
           onClick={handleShorten}
           disabled={loading}
-          className="bg-[#bdeceb] px-4 py-2 rounded-lg border border-gray-700 hover:bg-[#a8dfdd] transition"
+          className="bg-[#bdeceb] px-4 py-2 rounded-lg border border-gray-700"
         >
-          {loading ? "Shortening..." : "Shorten Link"}
+          {loading ? "Shortening..." : "Shorten"}
         </button>
       </div>
 
-      {/* Short code */}
-      {slug && (
-        <div className="flex items-center gap-4 mb-6">
-          <span className="text-lg">
-            Your Shortend Code: <b>{slug}</b>
-          </span>
-
-          <button
-            onClick={() => copy(slug)}
-            className="bg-[#bdeceb] px-4 py-2 rounded-lg border border-gray-700"
+      {shortUrl && (
+        <div className="mb-4">
+          <p className="mb-1">Short URL:</p>
+          <a
+            href={shortUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-purple-700 underline"
           >
-            Copy
-          </button>
+            {shortUrl}
+          </a>
         </div>
       )}
 
-      {/* Full link */}
-      {shortUrl && (
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-lg mb-1">Your Shortend Link:</p>
-            <a
-              href={shortUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-purple-700 underline break-all"
-            >
-              {shortUrl}
-            </a>
-          </div>
+      
+      {slug && (
+        <div className="mt-4">
+          <p className="font-medium">Analytics</p>
 
-          <button
-            onClick={() => copy(shortUrl)}
-            className="bg-[#bdeceb] px-4 py-2 rounded-lg border border-gray-700"
-          >
-            Copy
-          </button>
+          {loadingAnalytics ? (
+            <p>Loading clicks...</p>
+          ) : (
+            <p>Total Clicks: {clickCount ?? 0}</p>
+          )}
         </div>
       )}
     </div>
