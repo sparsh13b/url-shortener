@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL } from "./config";
 
 function App() {
   
@@ -28,7 +29,7 @@ function App() {
     setClickCount(null);
 
     try {
-      const res = await fetch("http://localhost:4000/api/shorten", {
+      const res = await fetch(`${API_BASE_URL}/api/shorten`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,7 +58,7 @@ function App() {
       setLoadingAnalytics(true);
 
       const res = await fetch(
-        `http://localhost:4000/api/analytics/${slug}`
+        `${API_BASE_URL}/api/analytics/${slug}`
       );
 
       const data = await res.json();
