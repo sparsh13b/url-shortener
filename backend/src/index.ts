@@ -13,11 +13,12 @@ app.use(express.json());
 
 app.use("/api", urlRoutes);
 app.use("/api", analyticsRoutes);
-app.use("/", redirectRoutes);
-
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+app.use("/", redirectRoutes);
+
+
 
 const PORT = process.env.PORT || 4000;
 
