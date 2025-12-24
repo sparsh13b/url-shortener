@@ -19,12 +19,15 @@ export async function createShortUrl(req: Request, res: Response) {
             },
         });
 
-        return res.status(201).json({
-        id: shortUrl.id,
-        originalUrl: shortUrl.originalUrl,
-        slug: shortUrl.slug,
-        shortUrl: `http://localhost:4000/${shortUrl.slug}`,
-        });
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+return res.status(201).json({
+  id: shortUrl.id,
+  originalUrl: shortUrl.originalUrl,
+  slug: shortUrl.slug,
+  shortUrl: `${baseUrl}/${shortUrl.slug}`,
+});
+
         }
     catch (error) {
         console.error(error);
