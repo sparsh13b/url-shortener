@@ -51,25 +51,26 @@ function App() {
       setLoading(false);
     }
   }
-
+ 
+  
   
   async function fetchAnalytics(slug: string) {
-    try {
-      setLoadingAnalytics(true);
+  if (!slug) return;
 
-      const res = await fetch(
-        `${API_BASE_URL}/api/analytics/${slug}`
-      );
-
-      const data = await res.json();
-      setClickCount(data.totalClicks);
-    } catch (err) {
-      console.error(err);
-      setClickCount(null);
-    } finally {
-      setLoadingAnalytics(false);
-    }
+  try {
+    setLoadingAnalytics(true);
+    const res = await fetch(`/api/analytics/${slug}`);
+    const data = await res.json();
+    setClickCount(data.totalClicks);
+  } catch (err) {
+    console.error(err);
+    setClickCount(null);
+  } finally {
+    setLoadingAnalytics(false);
   }
+}
+
+  
 
   
   return (
