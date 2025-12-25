@@ -59,7 +59,10 @@ function App() {
 
   try {
     setLoadingAnalytics(true);
-    const res = await fetch(`/api/analytics/${slug}`);
+    const res = await fetch(
+  `${API_BASE_URL}/api/analytics/${slug}`,
+  { cache: "no-store" }
+);
     const data = await res.json();
     setClickCount(data.totalClicks);
   } catch (err) {
