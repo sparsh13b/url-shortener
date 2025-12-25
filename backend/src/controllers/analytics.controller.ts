@@ -20,10 +20,15 @@ export async function getUrlAnalytics(
             where: { urlId: url.id },
         });
 
-        return res.json({
-            slug,
-            totalClicks,
-        });
+res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+res.setHeader("Pragma", "no-cache");
+res.setHeader("Expires", "0");
+
+return res.json({
+    slug,
+    totalClicks,
+});
+
     }
     catch (error) {
         console.error(error);
