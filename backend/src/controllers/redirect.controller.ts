@@ -62,7 +62,7 @@ export async function redirectToOriginalUrl(
     const { device, browser, os } = parseUserAgent(userAgent);
 
     
-    prisma.click.create({
+    await prisma.click.create({
       data: {
         urlId: urlId!, 
         device,
