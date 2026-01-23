@@ -20,8 +20,6 @@ model Url {
 model Click {
   id        String   @id @default(uuid())
   urlId     String
-  country   String?
-  city      String?
   device    String?
   browser   String?
   os        String?
