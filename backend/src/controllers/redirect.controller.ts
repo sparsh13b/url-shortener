@@ -3,30 +3,21 @@ import { prisma } from "../lib/prisma";
 import { redis } from "../lib/redis";
 import { parseUserAgent } from "../utils/parseUserAgent";
 
-export async function redirectToOriginalUrl(
-  req: Request,
-  res: Response
-) {
+export async function redirectToOriginalUrl(req: Request, res: Response) {
   try {
     const { slug } = req.params;
 
-    //to ensure we dont return before analytics is logged(after redis)
     let originalUrl: string | null = null;
     let urlId: string | null = null;
 
-    // Check Redis cache FIRST (read optimization only)
     const cachedUrl = await redis.get(`slug:${slug}`);
 
     if (cachedUrl) {
-      // updating originalUrl if found in redis
       originalUrl = cachedUrl;
 
-      
-      // We STILL need urlId for analytics
-      // Redis does NOT store urlId
       const url = await prisma.url.findUnique({
         where: { slug },
-        select: { id: true }, // minimal DB read
+        select: { id: true },
       });
 
       if (!url) {
@@ -35,10 +26,7 @@ export async function redirectToOriginalUrl(
 
       urlId = url.id;
     } else {
-      //Redis MISS → full DB lookup
-      const url = await prisma.url.findUnique({
-        where: { slug },
-      });
+      const url = await prisma.url.findUnique({ where: { slug } });
 
       if (!url) {
         return res.status(404).json({ error: "Short URL not found" });
@@ -51,32 +39,37 @@ export async function redirectToOriginalUrl(
       originalUrl = url.originalUrl;
       urlId = url.id;
 
-      // CHANGE 3: Cache ONLY the redirect target
-      // setting the new url never seen by redis
       await redis.set(`slug:${slug}`, originalUrl);
     }
 
-    
+    if (!originalUrl || !urlId) {
+      return res.status(500).json({ error: "Invalid redirect state" });
+    }
+
     const userAgent = req.headers["user-agent"];
     const referrer = req.headers["referer"] || null;
     const { device, browser, os } = parseUserAgent(userAgent);
 
-    
+    // MUST be awaited, no .catch()
     await prisma.click.create({
       data: {
-        urlId: urlId!, 
+        urlId,
         device,
         browser,
         os,
         referrer,
       },
-    }).catch(console.error);
+    });
 
-    // finally rediurecting to original url 
+    // Disable all caching
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
+
     return res.redirect(originalUrl);
-
   } catch (error) {
-    console.error(error);
+    console.error("Redirect error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
