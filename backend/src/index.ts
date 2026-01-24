@@ -11,27 +11,11 @@ const app = express();
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // allow server-to-server, curl, Postman
-      if (!origin) return callback(null, true);
-
-      // allow localhost
-      if (origin === "http://localhost:5173") {
-        return callback(null, true);
-      }
-
-      // allow ALL vercel deployments
-      if (origin.endsWith(".vercel.app")) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
   })
 );
+
 
 // Preflight
 app.options("*", cors());
