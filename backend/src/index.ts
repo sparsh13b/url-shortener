@@ -13,6 +13,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://url-shortener-three-woad.vercel.app/",
+      "https://url-shortener-qh6dvi7ay-sparsh-birlas-projects.vercel.app/",
     ],
   })
 );
